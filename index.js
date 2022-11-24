@@ -24,6 +24,7 @@ const client = new MongoClient(uri);
 //database collections
 const dbCategories = client.db("bikeZone").collection("bikeCategory");
 const dbProducts = client.db("bikeZone").collection("products");
+const dbUsers = client.db("bikeZone").collection("users");
 
 //database connection function
 const dbConnection = async () => {
@@ -54,6 +55,39 @@ app.get("/categories", async (req, res) => {
     });
   }
 });
+
+//Create users
+//need request body in json formate
+app.post("/users", async (req, res) => {
+  const umail = req.query.email;
+  console.log(umail);
+  const isExist = await dbUsers.findOne({ email: umail });
+  if (isExist) {
+    return;
+  }
+
+  try {
+    const result = await dbUsers.insertOne(req.body);
+    if (result.insertedId) {
+      res.send({
+        status: true,
+        data: result.insertedId,
+      });
+    } else {
+      res.send({
+        status: false,
+        data: "something wrong",
+      });
+    }
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+
 //post products
 //need request body in json formate
 app.post("/products", async (req, res) => {
