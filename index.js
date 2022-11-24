@@ -38,7 +38,6 @@ const dbConnection = async () => {
 dbConnection();
 
 //get categories
-//for limited services query params "limit" should be added
 app.get("/categories", async (req, res) => {
   try {
     const cursor = dbCategories.find({});
@@ -46,6 +45,24 @@ app.get("/categories", async (req, res) => {
     res.send({
       status: true,
       data: categories,
+    });
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+
+//get products by categories
+app.get("/products", async (req, res) => {
+  try {
+    const cursor = dbProducts.find({ category: req.query.category });
+    const products = await cursor.toArray();
+    res.send({
+      status: true,
+      data: products,
     });
   } catch (err) {
     console.log(err.name, err.message);
