@@ -21,6 +21,10 @@ app.get("/", (req, res) => {
 const uri = `mongodb+srv://${process.env.USER_NAME}:${process.env.PASSWORD}@cluster0.erzixne.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri);
 
+//database collections
+const dbCategories = client.db("bikeZone").collection("bikeCategory");
+const dbProducts = client.db("bikeZone").collection("products");
+
 //database connection function
 const dbConnection = async () => {
   try {
@@ -31,6 +35,49 @@ const dbConnection = async () => {
   }
 };
 dbConnection();
+
+//get categories
+//for limited services query params "limit" should be added
+app.get("/categories", async (req, res) => {
+  try {
+    const cursor = dbCategories.find({});
+    const categories = await cursor.toArray();
+    res.send({
+      status: true,
+      data: categories,
+    });
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+//post products
+//need request body in json formate
+app.post("/products", async (req, res) => {
+  try {
+    const result = await dbProducts.insertOne(req.body);
+    if (result.insertedId) {
+      res.send({
+        status: true,
+        data: result.insertedId,
+      });
+    } else {
+      res.send({
+        status: false,
+        data: "something wrong",
+      });
+    }
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
 
 //server listener
 app.listen(port, () => {
