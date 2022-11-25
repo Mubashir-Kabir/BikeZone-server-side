@@ -126,6 +126,24 @@ app.get("/users", async (req, res) => {
   }
 });
 
+//get all user by role (buyer/seller)
+app.get("/allusers", async (req, res) => {
+  try {
+    const cursor = dbUsers.find({ role: req.query.role });
+    const users = await cursor.toArray();
+    res.send({
+      status: true,
+      data: users,
+    });
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+
 //get booking product by email
 app.get("/bookings", async (req, res) => {
   try {
