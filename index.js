@@ -74,13 +74,31 @@ app.get("/products", async (req, res) => {
   }
 });
 
-//get product by id
+//get product by product id
 app.get("/product", async (req, res) => {
   try {
     const product = await dbProducts.findOne({ _id: ObjectId(req.query.id) });
     res.send({
       status: true,
       data: product,
+    });
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+
+//get product by user email
+app.get("/userproduct", async (req, res) => {
+  try {
+    const cursor = dbProducts.find({ seller: req.query.seller });
+    const products = await cursor.toArray();
+    res.send({
+      status: true,
+      data: products,
     });
   } catch (err) {
     console.log(err.name, err.message);
@@ -204,6 +222,62 @@ app.post("/bookings", async (req, res) => {
     res.send({
       status: false,
       data: err.name,
+    });
+  }
+});
+
+//delete specific product with product id (_id)
+app.delete("/products/:id", async (req, res) => {
+  try {
+    const query = { _id: ObjectId(req.params.id) };
+    const result = await dbProducts.deleteOne(query);
+    if (result.deletedCount) {
+      res.send({
+        status: true,
+        message: "deleted successfully",
+      });
+    } else {
+      res.send({
+        status: false,
+        message: "something wrong, try again",
+      });
+    }
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      message: err.name,
+    });
+  }
+});
+
+//temporary to update advertize field on appointment options
+app.put("/advertize/:id", async (req, res) => {
+  try {
+    const filter = { _id: ObjectId(req.params.id) };
+    const options = { upsert: true };
+    const updatedDoc = {
+      $set: {
+        advertize: true,
+      },
+    };
+    const result = await dbProducts.updateOne(filter, updatedDoc, options);
+    if (result.acknowledged) {
+      res.send({
+        status: true,
+        message: "Advertize successfully",
+      });
+    } else {
+      res.send({
+        status: false,
+        message: "something wrong, try again",
+      });
+    }
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      message: err.name,
     });
   }
 });
