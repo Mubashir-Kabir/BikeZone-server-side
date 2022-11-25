@@ -73,6 +73,24 @@ app.get("/products", async (req, res) => {
   }
 });
 
+//get user by email
+app.get("/users", async (req, res) => {
+  try {
+    const user = await dbUsers.findOne({ email: req.query.email });
+    console.log(user);
+    res.send({
+      status: true,
+      data: user,
+    });
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+
 //Create users
 //need request body in json formate
 app.post("/users", async (req, res) => {
