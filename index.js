@@ -74,6 +74,24 @@ app.get("/products", async (req, res) => {
   }
 });
 
+//get advertized  products
+app.get("/advertize", async (req, res) => {
+  try {
+    const cursor = dbProducts.find({ advertize: true });
+    const products = await cursor.toArray();
+    res.send({
+      status: true,
+      data: products,
+    });
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+
 //get product by product id
 app.get("/product", async (req, res) => {
   try {
@@ -249,6 +267,31 @@ app.delete("/products/:id", async (req, res) => {
   try {
     const query = { _id: ObjectId(req.params.id) };
     const result = await dbProducts.deleteOne(query);
+    if (result.deletedCount) {
+      res.send({
+        status: true,
+        message: "deleted successfully",
+      });
+    } else {
+      res.send({
+        status: false,
+        message: "something wrong, try again",
+      });
+    }
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      message: err.name,
+    });
+  }
+});
+
+//delete specific user with user id (_id)
+app.delete("/users/:id", async (req, res) => {
+  try {
+    const query = { _id: ObjectId(req.params.id) };
+    const result = await dbUsers.deleteOne(query);
     if (result.deletedCount) {
       res.send({
         status: true,
