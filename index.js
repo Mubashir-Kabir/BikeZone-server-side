@@ -1,7 +1,7 @@
 //required packages
 const express = require("express");
 const cors = require("cors");
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 require("dotenv").config();
 
 const app = express();
@@ -74,11 +74,27 @@ app.get("/products", async (req, res) => {
   }
 });
 
+//get product by id
+app.get("/product", async (req, res) => {
+  try {
+    const product = await dbProducts.findOne({ _id: ObjectId(req.query.id) });
+    res.send({
+      status: true,
+      data: product,
+    });
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+
 //get user by email
 app.get("/users", async (req, res) => {
   try {
     const user = await dbUsers.findOne({ email: req.query.email });
-    console.log(user);
     res.send({
       status: true,
       data: user,
