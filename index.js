@@ -25,7 +25,7 @@ const client = new MongoClient(uri);
 const dbCategories = client.db("bikeZone").collection("bikeCategory");
 const dbProducts = client.db("bikeZone").collection("products");
 const dbUsers = client.db("bikeZone").collection("users");
-const dbBooking = client.db("bikeZone").collection("booking");
+const dbBooking = client.db("bikeZone").collection("bookings");
 
 //database connection function
 const dbConnection = async () => {
@@ -82,6 +82,24 @@ app.get("/users", async (req, res) => {
     res.send({
       status: true,
       data: user,
+    });
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+
+//get booking product by email
+app.get("/bookings", async (req, res) => {
+  try {
+    const cursor = dbBooking.find({ email: req.query.email });
+    const products = await cursor.toArray();
+    res.send({
+      status: true,
+      data: products,
     });
   } catch (err) {
     console.log(err.name, err.message);
@@ -151,7 +169,7 @@ app.post("/products", async (req, res) => {
 
 //post booking
 //need request body in json formate
-app.post("/booking", async (req, res) => {
+app.post("/bookings", async (req, res) => {
   try {
     const result = await dbBooking.insertOne(req.body);
     if (result.insertedId) {
