@@ -269,7 +269,7 @@ app.delete("/products/:id", async (req, res) => {
   }
 });
 
-//temporary to update advertize field on appointment options
+//Update advertize field of product
 app.put("/advertize/:id", async (req, res) => {
   try {
     const filter = { _id: ObjectId(req.params.id) };
@@ -284,6 +284,37 @@ app.put("/advertize/:id", async (req, res) => {
       res.send({
         status: true,
         message: "Advertize successfully",
+      });
+    } else {
+      res.send({
+        status: false,
+        message: "something wrong, try again",
+      });
+    }
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      message: err.name,
+    });
+  }
+});
+
+//Update user verified field
+app.put("/userverify/:id", async (req, res) => {
+  try {
+    const filter = { _id: ObjectId(req.params.id) };
+    const options = { upsert: true };
+    const updatedDoc = {
+      $set: {
+        verified: true,
+      },
+    };
+    const result = await dbUsers.updateOne(filter, updatedDoc, options);
+    if (result.acknowledged) {
+      res.send({
+        status: true,
+        message: "Verified successfully",
       });
     } else {
       res.send({
