@@ -166,12 +166,28 @@ app.get("/users", async (req, res) => {
 //get all user by role (buyer/seller)
 app.get("/allusers", verifyJwt, async (req, res) => {
   try {
-    const cursor = dbUsers.find({ role: req.query.role });
-    const users = await cursor.toArray();
-    res.send({
-      status: true,
-      data: users,
-    });
+    const applierEmail = req.headers?.applieremail || "";
+    const decodedEmail = req.decoded?.email;
+    if (applierEmail !== decodedEmail) {
+      res.send({
+        status: false,
+        data: "Admin access denied",
+      });
+    }
+    const applier = await dbUsers.findOne({ email: decodedEmail });
+    if (applier.role === "Admin") {
+      const cursor = dbUsers.find({ role: req.query.role });
+      const users = await cursor.toArray();
+      res.send({
+        status: true,
+        data: users,
+      });
+    } else {
+      res.send({
+        status: false,
+        data: "Admin access denied",
+      });
+    }
   } catch (err) {
     console.log(err.name, err.message);
     res.send({
@@ -307,20 +323,38 @@ app.delete("/products/:id", async (req, res) => {
 });
 
 //delete specific user with user id (_id)
-app.delete("/users/:id", async (req, res) => {
+app.delete("/users/:id", verifyJwt, async (req, res) => {
   try {
-    const query = { _id: ObjectId(req.params.id) };
-    const result = await dbUsers.deleteOne(query);
-    if (result.deletedCount) {
-      res.send({
-        status: true,
-        message: "deleted successfully",
-      });
-    } else {
+    const applierEmail = req.headers?.applieremail || "";
+    const decodedEmail = req.decoded?.email;
+    if (applierEmail !== decodedEmail) {
       res.send({
         status: false,
-        message: "something wrong, try again",
+        data: "Admin access denied",
       });
+    } else {
+      const applier = await dbUsers.findOne({ email: decodedEmail });
+
+      if (applier.role === "Admin") {
+        const query = { _id: ObjectId(req.params.id) };
+        const result = await dbUsers.deleteOne(query);
+        if (result.deletedCount) {
+          res.send({
+            status: true,
+            message: "deleted successfully",
+          });
+        } else {
+          res.send({
+            status: false,
+            message: "something wrong, try again",
+          });
+        }
+      } else {
+        res.send({
+          status: false,
+          data: "Admin access denied",
+        });
+      }
     }
   } catch (err) {
     console.log(err.name, err.message);
@@ -334,23 +368,34 @@ app.delete("/users/:id", async (req, res) => {
 //Update advertize field of product
 app.put("/advertize/:id", verifyJwt, async (req, res) => {
   try {
-    const filter = { _id: ObjectId(req.params.id) };
-    const options = { upsert: true };
-    const updatedDoc = {
-      $set: {
-        advertize: true,
-      },
-    };
-    const result = await dbProducts.updateOne(filter, updatedDoc, options);
-    if (result.acknowledged) {
-      res.send({
-        status: true,
-        message: "Advertize successfully",
-      });
+    const decodedEmail = req.decoded?.email;
+
+    const applier = await dbUsers.findOne({ email: decodedEmail });
+
+    if (applier.role === "Seller") {
+      const filter = { _id: ObjectId(req.params.id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          advertize: true,
+        },
+      };
+      const result = await dbProducts.updateOne(filter, updatedDoc, options);
+      if (result.acknowledged) {
+        res.send({
+          status: true,
+          message: "Advertize successfully",
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "something wrong, try again",
+        });
+      }
     } else {
       res.send({
         status: false,
-        message: "something wrong, try again",
+        message: "Seller access denied",
       });
     }
   } catch (err) {
@@ -363,26 +408,44 @@ app.put("/advertize/:id", verifyJwt, async (req, res) => {
 });
 
 //Update user verified field
-app.put("/userverify/:id", async (req, res) => {
+app.put("/userverify/:id", verifyJwt, async (req, res) => {
   try {
-    const filter = { _id: ObjectId(req.params.id) };
-    const options = { upsert: true };
-    const updatedDoc = {
-      $set: {
-        verified: true,
-      },
-    };
-    const result = await dbUsers.updateOne(filter, updatedDoc, options);
-    if (result.acknowledged) {
-      res.send({
-        status: true,
-        message: "Verified successfully",
-      });
-    } else {
+    const applierEmail = req.headers?.applieremail || "";
+    const decodedEmail = req.decoded?.email;
+    if (applierEmail !== decodedEmail) {
       res.send({
         status: false,
-        message: "something wrong, try again",
+        data: "Admin access denied",
       });
+    } else {
+      const applier = await dbUsers.findOne({ email: decodedEmail });
+
+      if (applier.role === "Admin") {
+        const filter = { _id: ObjectId(req.params.id) };
+        const options = { upsert: true };
+        const updatedDoc = {
+          $set: {
+            verified: true,
+          },
+        };
+        const result = await dbUsers.updateOne(filter, updatedDoc, options);
+        if (result.acknowledged) {
+          res.send({
+            status: true,
+            message: "Verified successfully",
+          });
+        } else {
+          res.send({
+            status: false,
+            message: "something wrong, try again",
+          });
+        }
+      } else {
+        res.send({
+          status: false,
+          data: "Admin access denied",
+        });
+      }
     }
   } catch (err) {
     console.log(err.name, err.message);
