@@ -173,20 +173,56 @@ app.get("/allusers", verifyJwt, async (req, res) => {
         status: false,
         data: "Admin access denied",
       });
-    }
-    const applier = await dbUsers.findOne({ email: decodedEmail });
-    if (applier.role === "Admin") {
-      const cursor = dbUsers.find({ role: req.query.role });
-      const users = await cursor.toArray();
-      res.send({
-        status: true,
-        data: users,
-      });
     } else {
+      const applier = await dbUsers.findOne({ email: decodedEmail });
+      if (applier.role === "Admin") {
+        const cursor = dbUsers.find({ role: req.query.role });
+        const users = await cursor.toArray();
+        res.send({
+          status: true,
+          data: users,
+        });
+      } else {
+        res.send({
+          status: false,
+          data: "Admin access denied",
+        });
+      }
+    }
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      data: err.name,
+    });
+  }
+});
+
+//get reported products
+app.get("/reportedproducts", verifyJwt, async (req, res) => {
+  try {
+    const applierEmail = req.headers?.applieremail || "";
+    const decodedEmail = req.decoded?.email;
+    if (applierEmail !== decodedEmail) {
       res.send({
         status: false,
         data: "Admin access denied",
       });
+    } else {
+      const applier = await dbUsers.findOne({ email: decodedEmail });
+      if (applier.role === "Admin") {
+        const cursor = dbProducts.find({ reported: true });
+        const products = await cursor.toArray();
+        res.send({
+          status: true,
+          data: products,
+        });
+      } else {
+        res.send({
+          status: false,
+          data: "Admin access denied",
+        });
+      }
     }
   } catch (err) {
     console.log(err.name, err.message);
@@ -249,7 +285,7 @@ app.post("/users", async (req, res) => {
 
 //post products
 //need request body in json formate
-app.post("/products", async (req, res) => {
+app.post("/products", verifyJwt, async (req, res) => {
   try {
     const result = await dbProducts.insertOne(req.body);
     if (result.insertedId) {
@@ -298,7 +334,7 @@ app.post("/bookings", verifyJwt, async (req, res) => {
 });
 
 //delete specific product with product id (_id)
-app.delete("/products/:id", async (req, res) => {
+app.delete("/products/:id", verifyJwt, async (req, res) => {
   try {
     const query = { _id: ObjectId(req.params.id) };
     const result = await dbProducts.deleteOne(query);
@@ -385,6 +421,48 @@ app.put("/advertize/:id", verifyJwt, async (req, res) => {
         res.send({
           status: true,
           message: "Advertize successfully",
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "something wrong, try again",
+        });
+      }
+    } else {
+      res.send({
+        status: false,
+        message: "Seller access denied",
+      });
+    }
+  } catch (err) {
+    console.log(err.name, err.message);
+    res.send({
+      status: false,
+      message: err.name,
+    });
+  }
+});
+
+//Update reported field of product
+app.put("/report/:id", verifyJwt, async (req, res) => {
+  try {
+    const decodedEmail = req.decoded?.email;
+
+    const applier = await dbUsers.findOne({ email: decodedEmail });
+
+    if (applier.role === "Buyer") {
+      const filter = { _id: ObjectId(req.params.id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          reported: true,
+        },
+      };
+      const result = await dbProducts.updateOne(filter, updatedDoc, options);
+      if (result.acknowledged) {
+        res.send({
+          status: true,
+          message: "reported successfully",
         });
       } else {
         res.send({
