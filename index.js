@@ -287,17 +287,34 @@ app.post("/users", async (req, res) => {
 //need request body in json formate
 app.post("/products", verifyJwt, async (req, res) => {
   try {
-    const result = await dbProducts.insertOne(req.body);
-    if (result.insertedId) {
-      res.send({
-        status: true,
-        data: result.insertedId,
-      });
-    } else {
+    const applierEmail = req.headers?.applieremail || "";
+    const decodedEmail = req.decoded?.email;
+    if (applierEmail !== decodedEmail) {
       res.send({
         status: false,
-        data: "something wrong",
+        data: "Seller access denied",
       });
+    } else {
+      const applier = await dbUsers.findOne({ email: decodedEmail });
+      if (applier.role === "Seller") {
+        const result = await dbProducts.insertOne(req.body);
+        if (result.insertedId) {
+          res.send({
+            status: true,
+            data: result.insertedId,
+          });
+        } else {
+          res.send({
+            status: false,
+            data: "something wrong",
+          });
+        }
+      } else {
+        res.send({
+          status: false,
+          data: "Seller access denied",
+        });
+      }
     }
   } catch (err) {
     console.log(err.name, err.message);
@@ -405,34 +422,41 @@ app.delete("/users/:id", verifyJwt, async (req, res) => {
 app.put("/advertize/:id", verifyJwt, async (req, res) => {
   try {
     const decodedEmail = req.decoded?.email;
+    const applierEmail = req.headers?.applieremail || "";
+    if (applierEmail !== decodedEmail) {
+      res.send({
+        status: false,
+        data: "Seller access denied",
+      });
+    } else {
+      const applier = await dbUsers.findOne({ email: decodedEmail });
 
-    const applier = await dbUsers.findOne({ email: decodedEmail });
-
-    if (applier.role === "Seller") {
-      const filter = { _id: ObjectId(req.params.id) };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          advertize: true,
-        },
-      };
-      const result = await dbProducts.updateOne(filter, updatedDoc, options);
-      if (result.acknowledged) {
-        res.send({
-          status: true,
-          message: "Advertize successfully",
-        });
+      if (applier.role === "Seller") {
+        const filter = { _id: ObjectId(req.params.id) };
+        const options = { upsert: true };
+        const updatedDoc = {
+          $set: {
+            advertize: true,
+          },
+        };
+        const result = await dbProducts.updateOne(filter, updatedDoc, options);
+        if (result.acknowledged) {
+          res.send({
+            status: true,
+            message: "Advertize successfully",
+          });
+        } else {
+          res.send({
+            status: false,
+            message: "something wrong, try again",
+          });
+        }
       } else {
         res.send({
           status: false,
-          message: "something wrong, try again",
+          message: "Seller access denied",
         });
       }
-    } else {
-      res.send({
-        status: false,
-        message: "Seller access denied",
-      });
     }
   } catch (err) {
     console.log(err.name, err.message);
