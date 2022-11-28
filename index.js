@@ -97,7 +97,7 @@ app.get("/category/:id", verifyJwt, async (req, res) => {
 app.get("/advertize", async (req, res) => {
   try {
     const cursor = dbProducts.find({ advertize: true });
-    const products = await cursor.toArray();
+    const products = await cursor.sort({ timeObj: -1 }).toArray();
     res.send({
       status: true,
       data: products,
