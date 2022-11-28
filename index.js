@@ -79,7 +79,7 @@ app.get("/categories", async (req, res) => {
 app.get("/category/:id", verifyJwt, async (req, res) => {
   try {
     const cursor = dbProducts.find({ category: req.params.id });
-    const products = await cursor.toArray();
+    const products = await cursor.sort({ timeObj: -1 }).toArray();
     res.send({
       status: true,
       data: products,
